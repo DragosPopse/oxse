@@ -2,8 +2,14 @@ package dragospopse_oxse_build
 
 import "core:build"
 import "core:os"
+import "core:os/os2"
 import "core:path/filepath"
 import "core:fmt"
+
+copy_file :: proc(src, dst: string) -> bool {
+	err := os2.copy_file(dst, src)
+	return true
+}
 
 Build_Type :: enum {
 	Debug,
@@ -59,8 +65,11 @@ run_target :: proc(target: ^build.Target, mode: build.Run_Mode, args: []build.Ar
 	config.out_file = "oxse.exe" if target.platform.os == .Windows else "oxse"
 	config.out_dir = build.trelpath(target, fmt.tprintf("out/%s", target.name))
 	config.src_path = build.trelpath(target, "oxse")
-
 	config.build_mode = .EXE
+
+	config.collections = {
+		{"oxse", build.trelpath(target, "oxse/runtime")},
+	}
 	
 	switch target.build_type {
 	case .Debug:
@@ -87,6 +96,9 @@ run_target :: proc(target: ^build.Target, mode: build.Run_Mode, args: []build.Ar
 	switch mode {
 	case .Build:
 		build.odin(target, .Build, config) or_return
+		if ODIN_OS == .Windows && target.platform.os == .Windows {
+			copy_file(fmt.tprintf("%svendor/sdl2/SDL2.dll", ODIN_ROOT), fmt.tprintf("%s/SDL2.dll", config.out_dir)) or_return
+		}
 		return true
 	case .Dev:
 		build.generate_odin_devenv(target, config, args) or_return
