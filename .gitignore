@@ -1,0 +1,12 @@
+# Ignore everything
+*
+# But descend into directories
+!*/
+
+# git essentials
+!.gitignore
+!README.md
+
+# Odin Packages
+!build/**
+!oxse/**
