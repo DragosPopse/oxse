@@ -332,7 +332,7 @@ Window_Init :: struct {
 Window :: struct {
 	pos: xm.Vec2i,
 	size: xm.Vec2i,
-	event_arena: memo.SArena(1 * memo.MiB),
+	event_arena: memo.SArena(1 * memo.MiB), // Note(Dragos): maybe we can use the temp_allocator to allocate the event queue every time.
 	event_queue: list.List,
 	n_events: int,
 	impl: _Window,
