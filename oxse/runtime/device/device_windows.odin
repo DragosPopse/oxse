@@ -6,88 +6,88 @@ import "core:runtime"
 
 L :: win32.L
 
-_A          :: win32.VK_A
-_B          :: win32.VK_B
-_C          :: win32.VK_C
-_D          :: win32.VK_D
-_E          :: win32.VK_E
-_F          :: win32.VK_F
-_G          :: win32.VK_G
-_H          :: win32.VK_H
-_I          :: win32.VK_I
-_J          :: win32.VK_J
-_K          :: win32.VK_K
-_L          :: win32.VK_L
-_M          :: win32.VK_M
-_N          :: win32.VK_N
-_O          :: win32.VK_O
-_P          :: win32.VK_P
-_Q          :: win32.VK_Q
-_R          :: win32.VK_R
-_S          :: win32.VK_S
-_T          :: win32.VK_T
-_U          :: win32.VK_U
-_V          :: win32.VK_V
-_W          :: win32.VK_W
-_X          :: win32.VK_X
-_Y          :: win32.VK_Y
-_Z          :: win32.VK_Z
-_Num1       :: win32.VK_NUMPAD1
-_Num2       :: win32.VK_NUMPAD2
-_Num3       :: win32.VK_NUMPAD3
-_Num4       :: win32.VK_NUMPAD4
-_Num5       :: win32.VK_NUMPAD5
-_Num6       :: win32.VK_NUMPAD6
-_Num7       :: win32.VK_NUMPAD7
-_Num8       :: win32.VK_NUMPAD8
-_Num9       :: win32.VK_NUMPAD9
-_Num0       :: win32.VK_NUMPAD0
-_F1         :: win32.VK_F1
-_F2         :: win32.VK_F2
-_F3         :: win32.VK_F3
-_F4         :: win32.VK_F4
-_F5         :: win32.VK_F5
-_F6         :: win32.VK_F6
-_F7         :: win32.VK_F7
-_F8         :: win32.VK_F8
-_F9         :: win32.VK_F9
-_F10        :: win32.VK_F10
-_F11        :: win32.VK_F11
-_F12        :: win32.VK_F12
-_Return     :: win32.VK_RETURN
-_Escape     :: win32.VK_ESCAPE
-_Backspace  :: win32.VK_BACK // Note(Dragos): Is this correct?
-_Tab        :: win32.VK_TAB
-_Space      :: win32.VK_SPACE
-_Minus      :: win32.VK_OEM_MINUS // Note(Dragos): Is this correct?
-_Equals     :: win32.VK_OEM_NEC_EQUAL
-_LBracket   :: win32.VK_OEM_4 // US standard keyboard: [{
-_RBracket   :: win32.VK_OEM_6 // US standard keyboard: ]}
-_Backslash  :: win32.VK_OEM_5 // US standard keyboard: \|
-_Semicolon  :: win32.VK_OEM_1 // US standard keyboard: ;:
-_Apostrophe :: win32.VK_OEM_7 // US standard keyboard: '"
-_Grave      :: win32.VK_OEM_3 // US standard keyboard: `~
-_Comma      :: win32.VK_OEM_COMMA
-_Period     :: win32.VK_OEM_PERIOD
-_Slash      :: win32.VK_OEM_2 // US standard keyboard: /?
-_Capslock   :: win32.VK_CAPITAL
-_Right      :: win32.VK_RIGHT
-_Left       :: win32.VK_LEFT
-_Down       :: win32.VK_DOWN
-_Up         :: win32.VK_UP
-_LControl   :: win32.VK_LCONTROL
-_LShift     :: win32.VK_LSHIFT
-_LAlt       :: win32.VK_LMENU
-_LSystem    :: win32.VK_LWIN
-_RControl   :: win32.VK_RCONTROL
-_RShift     :: win32.VK_RSHIFT
-_RAlt       :: win32.VK_RMENU
-_RSystem    :: win32.VK_RWIN
-
+Platform_Key :: enum {
+	Unknown    = 0,
+	A          = win32.VK_A,
+	B          = win32.VK_B,
+	C          = win32.VK_C,
+	D          = win32.VK_D,
+	E          = win32.VK_E,
+	F          = win32.VK_F,
+	G          = win32.VK_G,
+	H          = win32.VK_H,
+	I          = win32.VK_I,
+	J          = win32.VK_J,
+	K          = win32.VK_K,
+	L          = win32.VK_L,
+	M          = win32.VK_M,
+	N          = win32.VK_N,
+	O          = win32.VK_O,
+	P          = win32.VK_P,
+	Q          = win32.VK_Q,
+	R          = win32.VK_R,
+	S          = win32.VK_S,
+	T          = win32.VK_T,
+	U          = win32.VK_U,
+	V          = win32.VK_V,
+	W          = win32.VK_W,
+	X          = win32.VK_X,
+	Y          = win32.VK_Y,
+	Z          = win32.VK_Z,
+	Num1       = win32.VK_NUMPAD1,
+	Num2       = win32.VK_NUMPAD2,
+	Num3       = win32.VK_NUMPAD3,
+	Num4       = win32.VK_NUMPAD4,
+	Num5       = win32.VK_NUMPAD5,
+	Num6       = win32.VK_NUMPAD6,
+	Num7       = win32.VK_NUMPAD7,
+	Num8       = win32.VK_NUMPAD8,
+	Num9       = win32.VK_NUMPAD9,
+	Num0       = win32.VK_NUMPAD0,
+	F1         = win32.VK_F1,
+	F2         = win32.VK_F2,
+	F3         = win32.VK_F3,
+	F4         = win32.VK_F4,
+	F5         = win32.VK_F5,
+	F6         = win32.VK_F6,
+	F7         = win32.VK_F7,
+	F8         = win32.VK_F8,
+	F9         = win32.VK_F9,
+	F10        = win32.VK_F10,
+	F11        = win32.VK_F11,
+	F12        = win32.VK_F12,
+	Return     = win32.VK_RETURN,
+	Escape     = win32.VK_ESCAPE,
+	Backspace  = win32.VK_BACK,            // Note(Dragos): Is this correct?
+	Tab        = win32.VK_TAB,
+	Space      = win32.VK_SPACE,
+	Minus      = win32.VK_OEM_MINUS,       // Note(Dragos): Is this correct?
+	Equals     = win32.VK_OEM_NEC_EQUAL,
+	LBracket   = win32.VK_OEM_4,           // US standard keyboard: [{
+	RBracket   = win32.VK_OEM_6,           // US standard keyboard: ]}
+	Backslash  = win32.VK_OEM_5,           // US standard keyboard: \|
+	Semicolon  = win32.VK_OEM_1,           // US standard keyboard: ;:
+	Apostrophe = win32.VK_OEM_7,           // US standard keyboard: '"
+	Grave      = win32.VK_OEM_3,           // US standard keyboard: `~
+	Comma      = win32.VK_OEM_COMMA,
+	Period     = win32.VK_OEM_PERIOD,
+	Slash      = win32.VK_OEM_2,           // US standard keyboard: /?
+	Capslock   = win32.VK_CAPITAL,
+	Right      = win32.VK_RIGHT,
+	Left       = win32.VK_LEFT,
+	Down       = win32.VK_DOWN,
+	Up         = win32.VK_UP,
+	LControl   = win32.VK_LCONTROL,
+	LShift     = win32.VK_LSHIFT,
+	LAlt       = win32.VK_LMENU,
+	LSystem    = win32.VK_LWIN,
+	RControl   = win32.VK_RCONTROL,
+	RShift     = win32.VK_RSHIFT,
+	RAlt       = win32.VK_RMENU,
+	RSystem    = win32.VK_RWIN,
+}
 
 win32_arrow_cursor: win32.HCURSOR
-
-
 
 
 win32_window_proc :: proc "stdcall" (wnd: win32.HWND, msg: win32.UINT, wparam: win32.WPARAM, lparam: win32.LPARAM) -> win32.LRESULT {

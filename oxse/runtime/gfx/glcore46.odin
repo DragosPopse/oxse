@@ -20,5 +20,5 @@ glcore46_init :: proc() {
 }
 
 glcore46_texture_init :: proc(texture: ^GLCORE46_Texture, data: []byte) {
-
+	
 }
