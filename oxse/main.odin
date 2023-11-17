@@ -2,6 +2,7 @@ package main
 
 import "core:fmt"
 import "core:strings"
+import "core:time"
 
 import xm "runtime/xmath"
 import mu "runtime/microui"
@@ -11,13 +12,19 @@ import dev "runtime/device"
 
 
 main :: proc() {
-	instance := dev.win32_get_current_instance()
-	main_wnd_class := dev.L("Main Window")
-	dev.win32_register_class(instance, main_wnd_class)
-	window := dev.win32_create_window(instance, main_wnd_class, dev.L("Welcome to OXSE"))
-	dev.win32_show_window(window)
+	window := dev.create_window({})
 	
-	for !dev.should_quit {
-		dev.win32_poll_messages()
+	running := true
+	for running {
+		for event in dev.poll_event(window) {
+			#partial switch ev in event {
+			case dev.Quit:
+				running = false
+				fmt.printf("Application exit at %s\n", time.weekday(ev.timestamp))
+			case dev.Resize:
+				fmt.printf("Prev Size: %v\n", ev.prev_size)
+				fmt.printf("Curr Size: %v\n", ev.curr_size)
+			}
+		}
 	}
 }

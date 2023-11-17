@@ -8,8 +8,6 @@ import "core:runtime"
 import "core:mem/virtual"
 
 
-
-
 Arena :: struct {
     #subtype allocator: mem.Allocator,
     arena: virtual.Arena,
@@ -50,7 +48,7 @@ varena_destroy :: proc(arena: ^VArena) {
 }
 
 sarena_init :: proc(arena: ^SArena($SIZE)) {
-    err := virtual.arena_init_buffer(&arena.arena, data)
+    err := virtual.arena_init_buffer(&arena.arena, arena.buffer[:])
     assert(err == nil, "Arena creation failure")
     arena.allocator = virtual.arena_allocator(&arena.arena)
 }

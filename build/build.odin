@@ -16,6 +16,7 @@ Build_Type :: enum {
 	Release,
 	Unsafe_Fast,
 	Safe,
+	Small,
 }
 
 Target :: struct {
@@ -57,6 +58,14 @@ target_safe := Target {
 	build_type = .Safe, 
 }
 
+target_small := Target {
+	target = {
+		name = "small",
+		platform = {ODIN_OS, ODIN_ARCH},
+	},
+	build_type = .Small,
+}
+
 
 run_target :: proc(target: ^build.Target, mode: build.Run_Mode, args: []build.Arg, loc := #caller_location) -> bool {
 	target := cast(^Target)target
@@ -91,6 +100,13 @@ run_target :: proc(target: ^build.Target, mode: build.Run_Mode, args: []build.Ar
 			.Memory,
 			.Thread,
 		}
+	case .Small:
+		config.opt = .Size
+		config.flags += {
+			.Disable_Assert,
+			.No_Bounds_Check,
+			.No_CRT,
+		}
 	}
 
 	switch mode {
@@ -115,6 +131,9 @@ _ :: proc() {
 	project.name = "OXSE"
 	build.add_target(&project, &target_debug, run_target)
 	build.add_target(&project, &target_release, run_target)
+	build.add_target(&project, &target_safe, run_target)
+	build.add_target(&project, &target_unsafe_fast, run_target)
+	build.add_target(&project, &target_small, run_target)
 }
 
 main :: proc() {

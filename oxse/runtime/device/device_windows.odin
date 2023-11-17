@@ -3,6 +3,16 @@ package oxse_device
 import win32 "core:sys/windows"
 import "core:fmt"
 import "core:runtime"
+import "core:time"
+
+import "../memo"
+
+foreign import user32 "system:User32.lib"
+
+foreign user32 {
+	SetWindowLongPtrW :: proc(hWnd: win32.HWND, nIndex: win32.c_int, dwNewLong: win32.LONG_PTR) -> win32.LONG_PTR ---
+	GetWindowLongPtrW :: proc(hWnd: win32.HWND, nIndex: win32.c_int) -> win32.LONG_PTR ---
+}
 
 L :: win32.L
 
@@ -89,12 +99,83 @@ Platform_Key :: enum {
 
 win32_arrow_cursor: win32.HCURSOR
 
+_Window :: struct {
+	hinst: win32.HINSTANCE,
+	hwnd: win32.HWND,
+}
 
-win32_window_proc :: proc "stdcall" (wnd: win32.HWND, msg: win32.UINT, wparam: win32.WPARAM, lparam: win32.LPARAM) -> win32.LRESULT {
+_poll_event :: proc(window: ^Window) -> (event: Event, ok: bool) {
+	msg: win32.MSG
+	if win32.PeekMessageW(&msg, nil, 0, 0, win32.PM_REMOVE) {
+		win32.TranslateMessage(&msg)
+		win32.DispatchMessageW(&msg)
+		if msg.message == win32.WM_QUIT {
+			quit_event: Quit
+			quit_event.timestamp = time.now()
+			push_event(window, quit_event)
+		}
+	}
+	ev := pop_event(window)
+	return ev, ev != nil
+}
+
+WIN32_WNDCLASS_NAME := L("oxsewnd")
+
+_create_window :: proc(init: Window_Init) -> ^Window {
+	window := new(Window, context.allocator) // Todo(Dragos): Change this
+	memo.sarena_init(&window.event_arena)
+	window.impl.hinst = win32_get_current_instance()
+	@static class_registered: bool
+	if !class_registered {
+		class_registered = true
+		win32_register_class(window.impl.hinst, WIN32_WNDCLASS_NAME)
+	}
+	window.impl.hwnd = win32.CreateWindowExW(
+		win32.CS_HREDRAW | win32.CS_VREDRAW | win32.CS_OWNDC, // optional window style
+		WIN32_WNDCLASS_NAME,
+		L("Hello OXSE"), // toolbar text
+		win32.WS_OVERLAPPEDWINDOW, // window style
+		win32.CW_USEDEFAULT, win32.CW_USEDEFAULT, // size
+		win32.CW_USEDEFAULT, win32.CW_USEDEFAULT, // position
+		nil, nil, // parent, menu
+		window.impl.hinst,
+		window, // appdata
+	)
+	
+	if window.impl.hwnd == nil {
+		win32_print_last_error_and_exit("Failed to create win32 window.")
+	}
+
+	win32_show_window(window.impl.hwnd)
+	return window
+}
+
+win32_get_window :: proc "contextless" (hwnd: win32.HWND) -> ^Window {
+	return transmute(^Window)GetWindowLongPtrW(hwnd, win32.GWLP_USERDATA)
+}
+
+win32_set_window :: proc "contextless" (hwnd: win32.HWND, window: ^Window) {
+	SetWindowLongPtrW(hwnd, win32.GWLP_USERDATA, transmute(win32.LONG_PTR)window)
+}
+
+win32_window_proc :: proc "stdcall" (hwnd: win32.HWND, msg: win32.UINT, wparam: win32.WPARAM, lparam: win32.LPARAM) -> win32.LRESULT {
+	context = runtime.default_context() // Note(Dragos): This is not quite ok. 
 	switch msg {
+	case win32.WM_CREATE:
+		create_struct := transmute(^win32.CREATESTRUCTW)lparam
+		window := transmute(^Window)create_struct.lpCreateParams
+		win32_set_window(hwnd, window)
+
 	case win32.WM_SIZE:
 		width := win32.GET_X_LPARAM(lparam)
 		height := win32.GET_Y_LPARAM(lparam)
+		window := win32_get_window(hwnd)
+		event: Resize
+		event.prev_size = window.size
+		window.size.x = cast(int)width
+		window.size.y = cast(int)height
+		event.curr_size = window.size
+		push_event(window, event)
 
 	case win32.WM_PAINT:
 		ps: win32.PAINTSTRUCT
@@ -106,7 +187,7 @@ win32_window_proc :: proc "stdcall" (wnd: win32.HWND, msg: win32.UINT, wparam: w
 		return 0
 
 	}
-	return win32.DefWindowProcW(wnd, msg, wparam, lparam)
+	return win32.DefWindowProcW(hwnd, msg, wparam, lparam)
 }
 
 win32_get_current_instance :: proc() -> win32.HINSTANCE {
@@ -128,41 +209,11 @@ win32_register_class :: proc(inst: win32.HINSTANCE, name: win32.wstring) {
 	win32.RegisterClassW(&wc)
 }
 
-win32_create_window :: proc(inst: win32.HINSTANCE, class_name: win32.wstring, text: win32.wstring) -> win32.HWND {
-	hwnd := win32.CreateWindowExW(
-		win32.CS_HREDRAW | win32.CS_VREDRAW | win32.CS_OWNDC, // optional window style
-		class_name,
-		text, // toolbar text
-		win32.WS_OVERLAPPEDWINDOW, // window style
-		win32.CW_USEDEFAULT, win32.CW_USEDEFAULT, // size
-		win32.CW_USEDEFAULT, win32.CW_USEDEFAULT, // position
-		nil, nil, // parent, menu
-		inst,
-		nil, // appdata
-	)
-	
-	if hwnd == nil {
-		win32_print_last_error_and_exit("Failed to create win32 window.")
-	}
-
-	return hwnd
-}
-
 win32_show_window :: proc(wnd: win32.HWND) {
 	win32.ShowWindow(wnd, win32.SW_SHOW)
 	win32.UpdateWindow(wnd)	
 }
 
-win32_poll_messages :: proc() {
-	msg: win32.MSG
-	for win32.PeekMessageW(&msg, nil, 0, 0, win32.PM_REMOVE) {
-		win32.TranslateMessage(&msg)
-		win32.DispatchMessageW(&msg)
-		if msg.message == win32.WM_QUIT {
-			should_quit = true
-		}
-	}
-}
 
 win32_print_last_error_and_exit :: proc(prefix: string) -> ! {
 	error_message_id := win32.GetLastError()
