@@ -6,22 +6,22 @@ import "core:time"
 
 import xm "runtime/xmath"
 import mu "runtime/microui"
-import dev "runtime/device"
+import "runtime/app"
 
 
 
 
 main :: proc() {
-	window := dev.create_window({})
+	window := app.create_window({})
 	
 	running := true
 	for running {
-		for event in dev.poll_event(window) {
+		for event in app.poll_event(window) {
 			#partial switch ev in event {
-			case dev.Quit:
+			case app.Quit:
 				running = false
 				fmt.printf("Application exit at %s\n", time.weekday(ev.timestamp))
-			case dev.Resize:
+			case app.Resize:
 				fmt.printf("Prev Size: %v\n", ev.prev_size)
 				fmt.printf("Curr Size: %v\n", ev.curr_size)
 			}

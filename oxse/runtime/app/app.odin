@@ -1,4 +1,4 @@
-package oxse_device
+package oxse_app
 
 import xm "../xmath"
 import "../memo"

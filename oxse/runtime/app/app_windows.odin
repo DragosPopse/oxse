@@ -1,4 +1,4 @@
-package oxse_device
+package oxse_app
 
 import win32 "core:sys/windows"
 import "core:fmt"
