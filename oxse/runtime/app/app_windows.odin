@@ -4,6 +4,7 @@ import win32 "core:sys/windows"
 import "core:fmt"
 import "core:runtime"
 import "core:time"
+import "core:dynlib"
 
 import "../memo"
 
@@ -103,6 +104,17 @@ _Window :: struct {
 	hinst: win32.HINSTANCE,
 	hwnd: win32.HWND,
 }
+
+_gl_set_proc_address :: proc(p: rawptr, name: cstring) {
+	func := win32.wglGetProcAddress(name)
+	switch uintptr(func) {
+	case 0, 1, 2, 3, ~uintptr(0):
+		module := win32.LoadLibraryW(L("opengl32.dll"))
+		func = win32.GetProcAddress(module, name)
+	}
+	(^rawptr)(p)^ = func
+}
+
 
 _poll_event :: proc(window: ^Window) -> (event: Event, ok: bool) {
 	msg: win32.MSG
@@ -228,3 +240,4 @@ win32_print_last_error_and_exit :: proc(prefix: string) -> ! {
 	}
 	win32.ExitProcess(error_message_id)
 }
+

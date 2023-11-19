@@ -367,3 +367,7 @@ pop_event :: proc(window: ^Window) -> Event {
 poll_event :: proc(window: ^Window) -> (event: Event, ok: bool) {
 	return _poll_event(window)
 }
+
+gl_set_proc_address :: proc(p: rawptr, name: cstring) {
+	_gl_set_proc_address(p, name)
+}
