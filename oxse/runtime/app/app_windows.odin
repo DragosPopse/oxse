@@ -10,6 +10,7 @@ import "../memo"
 
 foreign import user32 "system:User32.lib"
 
+@(default_calling_convention="stdcall")
 foreign user32 {
 	SetWindowLongPtrW :: proc(hWnd: win32.HWND, nIndex: win32.c_int, dwNewLong: win32.LONG_PTR) -> win32.LONG_PTR ---
 	GetWindowLongPtrW :: proc(hWnd: win32.HWND, nIndex: win32.c_int) -> win32.LONG_PTR ---
