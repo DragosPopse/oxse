@@ -7,6 +7,7 @@ import "core:time"
 import "core:dynlib"
 
 import "../memo"
+import xm "../xmath"
 
 foreign import user32 "system:User32.lib"
 
@@ -21,6 +22,8 @@ L :: win32.L
 _Context :: struct {
 	hinst: win32.HINSTANCE,
 	hwnd: win32.HWND,
+	default_cursor: win32.HCURSOR,
+	class_name: win32.wstring,
 }
 
 
@@ -41,91 +44,73 @@ _gl_set_proc_address :: proc(p: rawptr, name: cstring) {
 	(^rawptr)(p)^ = func
 }
 
-
-_poll_event :: proc(window: ^Window) -> (event: Event, ok: bool) {
+_update :: proc() {
 	msg: win32.MSG
-	if win32.PeekMessageW(&msg, nil, 0, 0, win32.PM_REMOVE) {
+	for win32.PeekMessageW(&msg, nil, 0, 0, win32.PM_REMOVE) {
 		win32.TranslateMessage(&msg)
 		win32.DispatchMessageW(&msg)
 		if msg.message == win32.WM_QUIT {
 			quit_event: Quit
 			quit_event.timestamp = time.now()
-			push_event(window, quit_event)
+			push_event(quit_event)
 		}
 	}
-	ev := pop_event(window)
-	return ev, ev != nil
 }
 
-WIN32_WNDCLASS_NAME := L("oxsewnd")
-
-_window: Window
-
 _init :: proc(info: Init) {
-	window := new(Window, context.allocator)
-	memo.sarena_init(&window.event_arena)
-	window.impl.hinst = win32_get_current_instance()
-	@static class_registered: bool
-	if !class_registered {
-		class_registered = true
-		if win32_arrow_cursor == nil {
-			win32_arrow_cursor = auto_cast win32.LoadImageW(nil, transmute(win32.wstring)win32.IDC_ARROW, win32.IMAGE_CURSOR, 0, 0, win32.LR_DEFAULTSIZE | win32.LR_SHARED)
-			if win32_arrow_cursor == nil {
-				win32_print_last_error_and_exit("Cannot load cursor")
-			}
-		}
-		wc: win32.WNDCLASSW
-		wc.lpfnWndProc = win32_window_proc
-		wc.hInstance = window.impl.hinst
-		wc.lpszClassName = WIN32_WNDCLASS_NAME
-		wc.hCursor = win32_arrow_cursor
-		win32.RegisterClassW(&wc)
+	using app_context.os
+	wc: win32.WNDCLASSW
+	hinst = auto_cast win32.GetModuleHandleW(nil)
+	class_name = L("oxsewndclass")
+	default_cursor = auto_cast win32.LoadImageW(nil, transmute(win32.wstring)win32.IDC_ARROW, win32.IMAGE_CURSOR, 0, 0, win32.LR_DEFAULTSIZE | win32.LR_SHARED)
+	if default_cursor == nil {
+		win32_print_last_error_and_exit("Cannot load cursor")
 	}
-	window.impl.hwnd = win32.CreateWindowExW(
+	wc.lpfnWndProc = win32_window_proc
+	wc.hInstance = hinst
+	wc.lpszClassName = class_name
+	wc.hCursor = default_cursor
+	win32.RegisterClassW(&wc)
+	
+
+	title := win32.utf8_to_wstring(info.title, context.temp_allocator)
+
+	hwnd = win32.CreateWindowExW(
 		win32.CS_HREDRAW | win32.CS_VREDRAW | win32.CS_OWNDC, // optional window style
-		WIN32_WNDCLASS_NAME,
-		L("Hello OXSE"), // toolbar text
+		class_name,
+		title, // toolbar text
 		win32.WS_OVERLAPPEDWINDOW, // window style
 		win32.CW_USEDEFAULT, win32.CW_USEDEFAULT, // size
 		win32.CW_USEDEFAULT, win32.CW_USEDEFAULT, // position
 		nil, nil, // parent, menu
-		window.impl.hinst,
-		window, // appdata
+		hinst,
+		nil,
 	)
 	
-	if window.impl.hwnd == nil {
+	if hwnd == nil {
 		win32_print_last_error_and_exit("Failed to create win32 window.")
 	}
 
-	win32_show_window(window.impl.hwnd)
+	win32.ShowWindow(hwnd, win32.SW_SHOW)
+	win32.UpdateWindow(hwnd)
 }
 
-win32_get_window :: proc "contextless" (hwnd: win32.HWND) -> ^Window {
-	return transmute(^Window)GetWindowLongPtrW(hwnd, win32.GWLP_USERDATA)
+_size :: proc "contextless" () -> xm.Vec2i {
+	rect: win32.RECT
+	win32.GetWindowRect(app_context.os.hwnd, &rect)
+	return {int(rect.right - rect.left), int(rect.bottom - rect.top)}
 }
 
-win32_set_window :: proc "contextless" (hwnd: win32.HWND, window: ^Window) {
-	SetWindowLongPtrW(hwnd, win32.GWLP_USERDATA, transmute(win32.LONG_PTR)window)
-}
 
 win32_window_proc :: proc "stdcall" (hwnd: win32.HWND, msg: win32.UINT, wparam: win32.WPARAM, lparam: win32.LPARAM) -> win32.LRESULT {
 	context = runtime.default_context() // Note(Dragos): This is not quite ok. 
 	switch msg {
 	case win32.WM_CREATE:
-		create_struct := transmute(^win32.CREATESTRUCTW)lparam
-		window := transmute(^Window)create_struct.lpCreateParams
-		win32_set_window(hwnd, window)
 
 	case win32.WM_SIZE:
 		width := win32.GET_X_LPARAM(lparam)
 		height := win32.GET_Y_LPARAM(lparam)
-		window := win32_get_window(hwnd)
-		event: Resize
-		event.prev_size = window.size
-		window.size.x = cast(int)width
-		window.size.y = cast(int)height
-		event.curr_size = window.size
-		push_event(window, event)
+		
 
 	case win32.WM_PAINT:
 		ps: win32.PAINTSTRUCT

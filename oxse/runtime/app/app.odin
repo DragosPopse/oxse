@@ -6,10 +6,12 @@ import "core:container/intrusive/list"
 import "core:time"
 
 Context :: struct {
+	event_queue: list.List,
+	should_quit: bool,
 	os: _Context,
 }
 
-app_context: Context
+app_context: ^Context
 
 
 
@@ -49,35 +51,45 @@ Init :: struct {
 		Size_Specifier,
 	},
 	flags: Init_Flags,
+	title: string,
 }
 
 init :: proc(info: Init) {
-
+	app_context = new(Context) // This is required for making this engine possibly available via dlls
+	_init(info)
 }
 
-push_event :: proc(window: ^Window, event: Event) -> bool {
-	assert(window != nil, "oxse_device.push_event: window is null")
-	if list.is_empty(&window.event_queue) { // queue is empty, free the memory, reset the list
-		free_all(window.event_arena) // This is wrong, it will free the list before handling the event, this should be done in the push event
-		window.event_queue = {}
-	}
-	node, err := new(Event_Node, window.event_arena)
-	assert(err == nil, "oxse_device.push_event: Error allocating event.")
+size :: proc "contextless" () -> xm.Vec2i {
+	return _size()
+}
+
+update :: proc() -> bool {
+	app_context.event_queue = {} // reset the event queue. Any unhandled event will be missed
+	_update()
+	return !app_context.should_quit
+}
+
+quit :: proc "contextless" () {
+	app_context.should_quit = true
+	// Note(Dragos): Probably there should be a _quit too. I'm also not sure about this approach with update(). We'll see how it behaves on wasm
+}
+
+@private
+push_event :: proc(event: Event) {
+	node, _ := new(Event_Node, context.temp_allocator)
 	node.event = event
-	list.push_back(&window.event_queue, &node.node)
-	window.n_events += 1
-	return err == nil
+	list.push_back(&app_context.event_queue, &node.node)
 }
 
-pop_event :: proc(window: ^Window) -> Event {
-	assert(window != nil, "oxse_device.pop_event: window is null")
-	node := cast(^Event_Node)list.pop_front(&window.event_queue)
-	window.n_events -= 1
+@private
+pop_event :: proc() -> Event {
+	node := cast(^Event_Node)list.pop_front(&app_context.event_queue)
 	return node.event if node != nil else nil
 }
 
-poll_event :: proc(window: ^Window) -> (event: Event, ok: bool) {
-	return _poll_event(window)
+poll_event :: proc() -> (event: Event, ok: bool) {
+	ev := pop_event()
+	return ev, ev != nil
 }
 
 gl_set_proc_address :: proc(p: rawptr, name: cstring) {
