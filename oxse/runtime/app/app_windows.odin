@@ -141,7 +141,18 @@ _create_window :: proc(init: Window_Init) -> ^Window {
 	@static class_registered: bool
 	if !class_registered {
 		class_registered = true
-		win32_register_class(window.impl.hinst, WIN32_WNDCLASS_NAME)
+		if win32_arrow_cursor == nil {
+			win32_arrow_cursor = auto_cast win32.LoadImageW(nil, transmute(win32.wstring)win32.IDC_ARROW, win32.IMAGE_CURSOR, 0, 0, win32.LR_DEFAULTSIZE | win32.LR_SHARED)
+			if win32_arrow_cursor == nil {
+				win32_print_last_error_and_exit("Cannot load cursor")
+			}
+		}
+		wc: win32.WNDCLASSW
+		wc.lpfnWndProc = win32_window_proc
+		wc.hInstance = window.impl.hinst
+		wc.lpszClassName = WIN32_WNDCLASS_NAME
+		wc.hCursor = win32_arrow_cursor
+		win32.RegisterClassW(&wc)
 	}
 	window.impl.hwnd = win32.CreateWindowExW(
 		win32.CS_HREDRAW | win32.CS_VREDRAW | win32.CS_OWNDC, // optional window style
@@ -205,21 +216,6 @@ win32_window_proc :: proc "stdcall" (hwnd: win32.HWND, msg: win32.UINT, wparam: 
 
 win32_get_current_instance :: proc() -> win32.HINSTANCE {
 	return auto_cast win32.GetModuleHandleW(nil)
-}
-
-win32_register_class :: proc(inst: win32.HINSTANCE, name: win32.wstring) {
-	if win32_arrow_cursor == nil {
-		win32_arrow_cursor = auto_cast win32.LoadImageW(nil, transmute(win32.wstring)win32.IDC_ARROW, win32.IMAGE_CURSOR, 0, 0, win32.LR_DEFAULTSIZE | win32.LR_SHARED)
-		if win32_arrow_cursor == nil {
-			win32_print_last_error_and_exit("Cannot load cursor")
-		}
-	}
-	wc: win32.WNDCLASSW
-	wc.lpfnWndProc = win32_window_proc
-	wc.hInstance = inst
-	wc.lpszClassName = name
-	wc.hCursor = win32_arrow_cursor
-	win32.RegisterClassW(&wc)
 }
 
 win32_show_window :: proc(wnd: win32.HWND) {
