@@ -5,329 +5,24 @@ import "../memo"
 import "core:container/intrusive/list"
 import "core:time"
 
-Key :: enum {
-	Unknown,
-	A,
-	B,
-	C,
-	D,
-	E,
-	F,
-	G,
-	H,
-	I,
-	J,
-	K,
-	L,
-	M,
-	N,
-	O,
-	P,
-	Q,
-	R,
-	S,
-	T,
-	U,
-	V,
-	W,
-	X,
-	Y,
-	Z,
-	Num1,
-	Num2,
-	Num3,
-	Num4,
-	Num5,
-	Num6,
-	Num7,
-	Num8,
-	Num9,
-	Num0,
-	F1,
-	F2,
-	F3,
-	F4,
-	F5,
-	F6,
-	F7,
-	F8,
-	F9,
-	F10,
-	F11,
-	F12,
-	Return,
-	Escape,
-	Backspace,
-	Tab,
-	Space,
-	Minus,
-	Equals,
-	LBracket,
-	RBracket,
-	Backslash,
-	Semicolon,
-	Apostrophe,
-	Grave,
-	Comma,
-	Period,
-	Slash,
-	Capslock,
-	Right,
-	Left,
-	Down,
-	Up,
-	LControl,
-	LShift,
-	LAlt,
-	LSystem,
-	RControl,
-	RShift,
-	RAlt,
-	RSystem,
+Context :: struct {
+	os: _Context,
 }
 
-key_to_platform_key := [Key]Platform_Key {
-	.Unknown    = .Unknown,
-	.A          = .A,
-	.B          = .B,
-	.C          = .C,
-	.D          = .D,
-	.E          = .E,
-	.F          = .F,
-	.G          = .G,
-	.H          = .H,
-	.I          = .I,
-	.J          = .J,
-	.K          = .K,
-	.L          = .L,
-	.M          = .M,
-	.N          = .N,
-	.O          = .O,
-	.P          = .P,
-	.Q          = .Q,
-	.R          = .R,
-	.S          = .S,
-	.T          = .T,
-	.U          = .U,
-	.V          = .V,
-	.W          = .W,
-	.X          = .X,
-	.Y          = .Y,
-	.Z          = .Z,
-	.Num1       = .Num1,
-	.Num2       = .Num2,
-	.Num3       = .Num3,
-	.Num4       = .Num4,
-	.Num5       = .Num5,
-	.Num6       = .Num6,
-	.Num7       = .Num7,
-	.Num8       = .Num8,
-	.Num9       = .Num9,
-	.Num0       = .Num0,
-	.F1         = .F1,
-	.F2         = .F2,
-	.F3         = .F3,
-	.F4         = .F4,
-	.F5         = .F5,
-	.F6         = .F6,
-	.F7         = .F7,
-	.F8         = .F8,
-	.F9         = .F9,
-	.F10        = .F10,
-	.F11        = .F11,
-	.F12        = .F12,
-	.Return     = .Return,
-	.Escape     = .Escape,
-	.Backspace  = .Backspace,
-	.Tab        = .Tab,
-	.Space      = .Space,
-	.Minus      = .Minus,
-	.Equals     = .Equals,
-	.LBracket   = .LBracket,
-	.RBracket   = .RBracket,
-	.Backslash  = .Backslash,
-	.Semicolon  = .Semicolon,
-	.Apostrophe = .Apostrophe,
-	.Grave      = .Grave,
-	.Comma      = .Comma,
-	.Period     = .Period,
-	.Slash      = .Slash,
-	.Capslock   = .Capslock,
-	.Right      = .Right,
-	.Left       = .Left,
-	.Down       = .Down,
-	.Up         = .Up,
-	.LControl   = .LControl,
-	.LShift     = .LShift,
-	.LAlt       = .LAlt,
-	.LSystem    = .LSystem,
-	.RControl   = .RControl,
-	.RShift     = .RShift,
-	.RAlt       = .RAlt,
-	.RSystem    = .RSystem,
-}
+app_context: Context
 
-platform_key_to_key := #sparse [Platform_Key]Key {
-	.Unknown    = .Unknown,
-	.A          = .A,
-	.B          = .B,
-	.C          = .C,
-	.D          = .D,
-	.E          = .E,
-	.F          = .F,
-	.G          = .G,
-	.H          = .H,
-	.I          = .I,
-	.J          = .J,
-	.K          = .K,
-	.L          = .L,
-	.M          = .M,
-	.N          = .N,
-	.O          = .O,
-	.P          = .P,
-	.Q          = .Q,
-	.R          = .R,
-	.S          = .S,
-	.T          = .T,
-	.U          = .U,
-	.V          = .V,
-	.W          = .W,
-	.X          = .X,
-	.Y          = .Y,
-	.Z          = .Z,
-	.Num1       = .Num1,
-	.Num2       = .Num2,
-	.Num3       = .Num3,
-	.Num4       = .Num4,
-	.Num5       = .Num5,
-	.Num6       = .Num6,
-	.Num7       = .Num7,
-	.Num8       = .Num8,
-	.Num9       = .Num9,
-	.Num0       = .Num0,
-	.F1         = .F1,
-	.F2         = .F2,
-	.F3         = .F3,
-	.F4         = .F4,
-	.F5         = .F5,
-	.F6         = .F6,
-	.F7         = .F7,
-	.F8         = .F8,
-	.F9         = .F9,
-	.F10        = .F10,
-	.F11        = .F11,
-	.F12        = .F12,
-	.Return     = .Return,
-	.Escape     = .Escape,
-	.Backspace  = .Backspace,
-	.Tab        = .Tab,
-	.Space      = .Space,
-	.Minus      = .Minus,
-	.Equals     = .Equals,
-	.LBracket   = .LBracket,
-	.RBracket   = .RBracket,
-	.Backslash  = .Backslash,
-	.Semicolon  = .Semicolon,
-	.Apostrophe = .Apostrophe,
-	.Grave      = .Grave,
-	.Comma      = .Comma,
-	.Period     = .Period,
-	.Slash      = .Slash,
-	.Capslock   = .Capslock,
-	.Right      = .Right,
-	.Left       = .Left,
-	.Down       = .Down,
-	.Up         = .Up,
-	.LControl   = .LControl,
-	.LShift     = .LShift,
-	.LAlt       = .LAlt,
-	.LSystem    = .LSystem,
-	.RControl   = .RControl,
-	.RShift     = .RShift,
-	.RAlt       = .RAlt,
-	.RSystem    = .RSystem,
-}
 
-Mouse_Button :: enum {
-	Left,
-	Right,
-	Middle,
-	X1,
-	X2,
-}
 
-Key_Event :: struct {
-	key: Key,
-}
-
-Mouse_Button_Event :: struct {
-	pos: xm.Vec2i,
-	button: Mouse_Button,
-}
-
-Mouse_Scroll :: struct {
-	scroll: xm.Vec2i,
-}
-
-Mouse_Move :: struct {
-	pos: xm.Vec2i,
-	delta: xm.Vec2i,
-}
-
-Quit :: struct {
-	timestamp: time.Time,
-}
-
-Resize :: struct {
-	prev_size: xm.Vec2i,
-	curr_size: xm.Vec2i,
-}
-
-Mouse_Button_Down :: distinct Mouse_Button_Event
-Mouse_Button_Up :: distinct Mouse_Button_Event
-Mouse_Button_Hold :: distinct Mouse_Button_Event
-
-Key_Down :: distinct Key_Event
-Key_Up :: distinct Key_Event
-Key_Hold :: distinct Key_Event
-
-Event :: union {
-	Key_Down, Key_Up, Key_Hold,
-	Mouse_Button_Down, Mouse_Button_Up, Mouse_Button_Hold,
-	Mouse_Scroll,
-	Quit,
-	Resize,
-}
-
-Event_Node :: struct {
-	using node: list.Node,
-	event: Event,
-}
-
-Window_Pos_Specifier :: enum {
+Pos_Specifier :: enum {
 	Unspecified,
 	Centered,
 }
 
-Window_Size_Specifier :: enum {
+Size_Specifier :: enum {
 	System_Default,
+	Fullscreen,
 }
 
-Window_Init_Pos :: union {
-	int,
-	Window_Pos_Specifier,
-}
-
-Window_Init_Size :: union {
-	int,
-	Window_Size_Specifier,
-}
-
-Window_Init :: struct {
-	pos: [2]Window_Init_Pos,
-	size: [2]Window_Init_Size,
-
-}
 
 Window :: struct {
 	pos: xm.Vec2i,
@@ -338,9 +33,26 @@ Window :: struct {
 	impl: _Window,
 }
 
-create_window :: proc(init: Window_Init) -> ^Window {
-	window := _create_window(init)
-	return window
+Init_Flag :: enum {
+	Fullscreen,
+}
+
+Init_Flags :: bit_set[Init_Flag]
+
+Init :: struct {
+	pos: [2]union {
+		int,
+		Pos_Specifier,
+	},
+	size: [2]union {
+		int,
+		Size_Specifier,
+	},
+	flags: Init_Flags,
+}
+
+init :: proc(info: Init) {
+
 }
 
 push_event :: proc(window: ^Window, event: Event) -> bool {
