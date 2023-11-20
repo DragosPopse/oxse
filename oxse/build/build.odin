@@ -145,11 +145,11 @@ run_target :: proc(target: ^build.Target, mode: build.Run_Mode, args: []build.Ar
 @init
 _ :: proc() {
 	project.name = "OXSE"
-	build.add_target(&project, &target_debug, run_target)
-	build.add_target(&project, &target_release, run_target)
-	build.add_target(&project, &target_safe, run_target)
-	build.add_target(&project, &target_unsafe_fast, run_target)
-	build.add_target(&project, &target_small, run_target)
+	build.add_target(&project, &target_debug, run_target, 2)
+	build.add_target(&project, &target_release, run_target, 2)
+	build.add_target(&project, &target_safe, run_target, 2)
+	build.add_target(&project, &target_unsafe_fast, run_target, 2)
+	build.add_target(&project, &target_small, run_target, 2)
 }
 
 main :: proc() {
