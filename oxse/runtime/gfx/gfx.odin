@@ -11,9 +11,18 @@ Renderer_VTable :: struct {
 	draw: proc(base_elem, elem_count, instance_count: int)
 }
 
+Renderer_Init :: struct {
+	api: API,
+}
+
 Renderer :: struct {
 	api: API,
 	using vtable: Renderer_VTable,
+	api_data: rawptr,
+}
+
+create_renderer :: proc() {
+	
 }
 
 Surface :: struct {

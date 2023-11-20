@@ -6,7 +6,6 @@ import xm "../xmath"
 import sdl "vendor:sdl2" // TODO(Dragos): Remove this from here
 
 
-
 GLCORE46_Texture :: struct {
 	object: gl.uint,
 }
