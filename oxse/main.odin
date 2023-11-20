@@ -10,6 +10,8 @@ import "core:path/filepath"
 import "core:c/libc"
 import "core:runtime"
 
+import "core:build"
+
 import win32 "core:sys/windows"
 import "runtime/memo"
 import "runtime/app"
@@ -73,7 +75,7 @@ run_init_command :: proc(oxse: ^Oxse, args: []app.Arg) {
 	for arg in args[1:] {
 		
 		if dir, dir_is_string := arg.(string); dir_is_string {
-			make_directory(dir)
+			build.make_directory(dir)
 			if !os.is_dir(dir) {
 				fmt.eprintf("Error making directory %s\n", dir)
 				os.exit(1)
@@ -96,22 +98,3 @@ run_build_command :: proc(oxse: ^Oxse, args: []app.Arg) {
 	
 }
 
-// Creates a directory recursively or does nothing if it exists.
-make_directory :: proc(name: string) {
-	// Note(Dragos): I wrote this a while ago. Is there a better way?
-	slash_dir, _ := filepath.to_slash(name, context.temp_allocator)
-	dirs := strings.split_after(slash_dir, "/", context.temp_allocator)
-	for _, i in dirs {
-		new_dir := strings.concatenate(dirs[0 : i + 1], context.temp_allocator)
-		os.make_directory(new_dir)
-	}
-}
-
-exec :: proc(file: string, args: []string) -> int {
-	//return _exec(file, args) // Note(Dragos): _exec is not properly implemented. Wait for os2
-	runtime.DEFAULT_TEMP_ALLOCATOR_TEMP_GUARD()
-	cmd := strings.join(args, " ", context.temp_allocator)
-	cmd = strings.join({file, cmd}, " ", context.temp_allocator)
-	cmd_c := strings.clone_to_cstring(cmd, context.temp_allocator)
-	return cast(int)libc.system(cmd_c)
-}
