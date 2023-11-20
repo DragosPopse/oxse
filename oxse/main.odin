@@ -89,6 +89,10 @@ run_init_command :: proc(oxse: ^Oxse, args: []app.Arg) {
 	}
 	
 	fmt.printf("Initializing an oxse project at %s\n", init_dir_abs)
+	os.set_current_directory(init_dir_abs)
+	
+	build.make_directory("./build")
+	
 }
 
 run_build_command :: proc(oxse: ^Oxse, args: []app.Arg) {
