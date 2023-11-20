@@ -1,5 +1,7 @@
 package dragospopse_oxse_build
 
+when ODIN_OS != .Windows do #panic("The OXSE tools can only be built on windows.")
+
 import "core:build"
 import "core:os"
 import "core:os/os2"
@@ -26,10 +28,19 @@ Target :: struct {
 
 project: build.Project
 
+CURRENT_PLATFORM :: build.Platform{ODIN_OS, ODIN_ARCH}
+
+target_install := Target {
+	target = {
+		name = "install",
+		platform = CURRENT_PLATFORM,
+	},
+}
+
 target_debug := Target {
 	target = {
 		name = "dbg",
-		platform = {ODIN_OS, ODIN_ARCH},
+		platform = CURRENT_PLATFORM,
 	},
 	build_type = .Debug, 
 }
@@ -37,7 +48,7 @@ target_debug := Target {
 target_release := Target {
 	target = {
 		name = "rel", // TODO(Dragos): check in core:build for similar names.
-		platform = {ODIN_OS, ODIN_ARCH},
+		platform = CURRENT_PLATFORM,
 	},
 	build_type = .Release, 
 }
@@ -45,7 +56,7 @@ target_release := Target {
 target_unsafe_fast := Target {
 	target = {
 		name = "fast", // TODO(Dragos): check in core:build for similar names.
-		platform = {ODIN_OS, ODIN_ARCH},
+		platform = CURRENT_PLATFORM,
 	},
 	build_type = .Unsafe_Fast, 
 }
@@ -53,18 +64,20 @@ target_unsafe_fast := Target {
 target_safe := Target {
 	target = {
 		name = "safe",
-		platform = {ODIN_OS, ODIN_ARCH},
+		platform = CURRENT_PLATFORM,
 	},
-	build_type = .Safe, 
+	build_type = .Safe,
 }
 
 target_small := Target {
 	target = {
 		name = "small",
-		platform = {ODIN_OS, ODIN_ARCH},
+		platform = CURRENT_PLATFORM,
 	},
 	build_type = .Small,
 }
+
+OUT_DIR :: "."
 
 
 run_target :: proc(target: ^build.Target, mode: build.Run_Mode, args: []build.Arg, loc := #caller_location) -> bool {
@@ -72,7 +85,7 @@ run_target :: proc(target: ^build.Target, mode: build.Run_Mode, args: []build.Ar
 	config: build.Odin_Config
 	config.platform = target.platform
 	config.out_file = "oxse.exe" if target.platform.os == .Windows else "oxse"
-	config.out_dir = build.trelpath(target, fmt.tprintf("out/%s", target.name))
+	config.out_dir = build.trelpath(target, OUT_DIR)
 	config.src_path = build.trelpath(target, "oxse")
 	config.build_mode = .EXE
 
@@ -112,9 +125,12 @@ run_target :: proc(target: ^build.Target, mode: build.Run_Mode, args: []build.Ar
 	switch mode {
 	case .Build:
 		build.odin(target, .Build, config) or_return
+
+		/*
 		if ODIN_OS == .Windows && target.platform.os == .Windows {
 			copy_file(fmt.tprintf("%svendor/sdl2/SDL2.dll", ODIN_ROOT), fmt.tprintf("%s/SDL2.dll", config.out_dir)) or_return
 		}
+		*/
 		return true
 	case .Dev:
 		build.generate_odin_devenv(target, config, args) or_return
