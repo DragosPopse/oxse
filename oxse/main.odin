@@ -42,6 +42,10 @@ main :: proc() {
 	oxse_exe := filepath.base(oxse_fullpath)
 	oxse_dir := filepath.dir(oxse_fullpath)
 
+	oxse: Oxse
+	oxse.fullpath = oxse_fullpath
+	oxse.dir = oxse_dir
+
 	args, args_error := app.parse_args(os.args[1:])
 	if args_error != nil {
 		fmt.eprintf("Error parsing arguments, got %v\n", args_error)
@@ -49,13 +53,11 @@ main :: proc() {
 	}
 
 	if len(args) == 0 {
-		fmt.eprintf("Please specify a command for oxse to run\n")
-		os.exit(1)
+		run_help_command(&oxse, args)
+		os.exit(0)
 	}
 
-	oxse: Oxse
-	oxse.fullpath = oxse_fullpath
-	oxse.dir = oxse_dir
+	
 	command, command_is_string := args[0].(string)
 	if !command_is_string {
 		fmt.eprintf("First argument of oxse must be a command\n")
@@ -65,6 +67,21 @@ main :: proc() {
 	case "init" : run_init_command(&oxse, args)
 	case "build": run_build_command(&oxse, args)
 	}
+}
+
+run_help_command :: proc(oxse: ^Oxse, args: []app.Arg) {
+	fmt.printf("oxse command-line tools\n")
+	fmt.printf("Syntax: oxse <command>\n")
+	fmt.printf("Commands:\n")
+
+	fmt.printf("\tinit\n")
+	fmt.printf("\t\tInitializes a new oxse project. If no directory is specified, it will default to cwd. The directory must be empty.")
+
+	fmt.printf("\tstatus <optional dir>\n")
+	fmt.printf("\t\tPrints information about the project available in the current directory")
+
+	fmt.printf("\tbuild\n")
+	fmt.printf("\t\tBuilds the project's build system. This command is required in order to ensure that the collection flags are set correctly.")
 }
 
 run_init_command :: proc(oxse: ^Oxse, args: []app.Arg) {
@@ -92,6 +109,8 @@ run_init_command :: proc(oxse: ^Oxse, args: []app.Arg) {
 	os.set_current_directory(init_dir_abs)
 	
 	build.make_directory("./build")
+	build.make_directory("./.oxse")
+	
 	
 }
 
