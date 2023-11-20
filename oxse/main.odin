@@ -72,17 +72,14 @@ run_init_command :: proc(oxse: ^Oxse, args: []app.Arg) {
 	assert(init_command == "init")
 	init_dir := "."
 	
-	for arg in args[1:] {
-		
-		if dir, dir_is_string := arg.(string); dir_is_string {
-			build.make_directory(dir)
-			if !os.is_dir(dir) {
-				fmt.eprintf("Error making directory %s\n", dir)
-				os.exit(1)
-			}
-			init_dir = dir
-			break
+	for arg in args[1:] do if dir, dir_is_string := arg.(string); dir_is_string {
+		build.make_directory(dir)
+		if !os.is_dir(dir) {
+			fmt.eprintf("Error making directory %s\n", dir)
+			os.exit(1)
 		}
+		init_dir = dir
+		break
 	}
 	is_empty := cast(bool)PathIsDirectoryEmptyW(win32.utf8_to_wstring(init_dir))
 	init_dir_abs, _ := filepath.abs(init_dir)
