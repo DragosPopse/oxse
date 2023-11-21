@@ -90,7 +90,7 @@ run_target :: proc(target: ^build.Target, mode: build.Run_Mode, args: []build.Ar
 	config.build_mode = .EXE
 
 	config.collections = {
-		{"oxse", build.trelpath(target, "oxse/runtime")},
+		oxse_collection(),
 	}
 	
 	switch target.build_type {
@@ -118,7 +118,6 @@ run_target :: proc(target: ^build.Target, mode: build.Run_Mode, args: []build.Ar
 		config.flags += {
 			.Disable_Assert,
 			.No_Bounds_Check,
-			.No_CRT,
 		}
 	}
 

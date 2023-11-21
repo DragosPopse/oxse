@@ -23,10 +23,6 @@ foreign shlwapi {
 	PathIsDirectoryEmptyW :: proc(pszPath: win32.LPCWSTR) -> win32.BOOL ---
 }
 
-Oxse :: struct {
-	fullpath: string,
-	dir: string,
-}
 
 main :: proc() {
 	context.allocator = context.temp_allocator
@@ -42,9 +38,8 @@ main :: proc() {
 	oxse_exe := filepath.base(oxse_fullpath)
 	oxse_dir := filepath.dir(oxse_fullpath)
 
-	oxse: Oxse
-	oxse.fullpath = oxse_fullpath
-	oxse.dir = oxse_dir
+	shell: Shell
+	shell.oxse_root = oxse_dir
 
 	args, args_error := app.parse_args(os.args[1:])
 	if args_error != nil {
@@ -53,7 +48,7 @@ main :: proc() {
 	}
 
 	if len(args) == 0 {
-		run_help_command(&oxse, args)
+		display_general_help(&shell)
 		os.exit(0)
 	}
 
@@ -63,58 +58,15 @@ main :: proc() {
 		fmt.eprintf("First argument of oxse must be a command\n")
 		os.exit(1)
 	}
-	switch command {
-	case "init" : run_init_command(&oxse, args)
-	case "build": run_build_command(&oxse, args)
-	}
-}
-
-run_help_command :: proc(oxse: ^Oxse, args: []app.Arg) {
-	fmt.printf("oxse command-line tools\n")
-	fmt.printf("Syntax: oxse <command>\n")
-	fmt.printf("Commands:\n")
-
-	fmt.printf("\tinit\n")
-	fmt.printf("\t\tInitializes a new oxse project. If no directory is specified, it will default to cwd. The directory must be empty.")
-
-	fmt.printf("\tstatus <optional dir>\n")
-	fmt.printf("\t\tPrints information about the project available in the current directory")
-
-	fmt.printf("\tbuild\n")
-	fmt.printf("\t\tBuilds the project's build system. This command is required in order to ensure that the collection flags are set correctly.")
-}
-
-run_init_command :: proc(oxse: ^Oxse, args: []app.Arg) {
-	init_command := args[0]
-	assert(init_command == "init")
-	init_dir := "."
 	
-	for arg in args[1:] do if dir, dir_is_string := arg.(string); dir_is_string {
-		build.make_directory(dir)
-		if !os.is_dir(dir) {
-			fmt.eprintf("Error making directory %s\n", dir)
-			os.exit(1)
-		}
-		init_dir = dir
+	found_command := false
+	for command_desc in command_descriptions do if command == command_desc.name {
+		command_desc.procedure(&shell, args)
+		found_command = true
 		break
-	}
-	is_empty := cast(bool)PathIsDirectoryEmptyW(win32.utf8_to_wstring(init_dir))
-	init_dir_abs, _ := filepath.abs(init_dir)
-	if !is_empty {
-		fmt.eprintf("oxse init expects an empty directory, got %v\n", init_dir_abs)
+	} 
+	if !found_command {
+		fmt.eprintf("%s is not a recogneizd command\n", command)
 		os.exit(1)
 	}
-	
-	fmt.printf("Initializing an oxse project at %s\n", init_dir_abs)
-	os.set_current_directory(init_dir_abs)
-	
-	build.make_directory("./build")
-	build.make_directory("./.oxse")
-	
-	
 }
-
-run_build_command :: proc(oxse: ^Oxse, args: []app.Arg) {
-	
-}
-
