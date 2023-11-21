@@ -1,4 +1,4 @@
-package main
+package oxse_shell
 
 import "core:os"
 import "core:encoding/json"
@@ -43,7 +43,7 @@ save_project :: proc(project: Project) -> bool {
 	marshal_opts: json.Marshal_Options
 	marshal_opts.pretty = true
 	data, err := json.marshal(project_json, marshal_opts)
-	build.make_directory("./oxse")
+	build.make_directory("./.oxse")
 	if err != nil do return false
 	return os.write_entire_file(OXSE_PROJECT_JSON_PATH, data)
 }

@@ -86,12 +86,9 @@ run_target :: proc(target: ^build.Target, mode: build.Run_Mode, args: []build.Ar
 	config.platform = target.platform
 	config.out_file = "oxse.exe" if target.platform.os == .Windows else "oxse"
 	config.out_dir = build.trelpath(target, OUT_DIR)
-	config.src_path = build.trelpath(target, "oxse")
+	config.src_path = build.trelpath(target, "oxse/shell")
 	config.build_mode = .EXE
 
-	config.collections = {
-		oxse_collection(),
-	}
 	
 	switch target.build_type {
 	case .Debug:

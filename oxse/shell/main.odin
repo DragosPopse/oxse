@@ -1,7 +1,8 @@
-package main
+package oxse_shell
 
 when ODIN_OS != .Windows do #panic("OXSE can only run on windows.")
 
+//+private
 import "core:fmt"
 import "core:strings"
 import "core:time"
@@ -13,8 +14,9 @@ import "core:runtime"
 import "core:build"
 
 import win32 "core:sys/windows"
-import "runtime/memo"
-import "runtime/app"
+
+import "../runtime/memo"
+import "../runtime/app"
 
 foreign import shlwapi "system:Shlwapi.lib"
 
@@ -23,23 +25,11 @@ foreign shlwapi {
 	PathIsDirectoryEmptyW :: proc(pszPath: win32.LPCWSTR) -> win32.BOOL ---
 }
 
-
+@(disabled = ODIN_BUILD_MODE != .Executable)
 main :: proc() {
 	context.allocator = context.temp_allocator
-	fullpath_buffer: [2 * memo.KiB]byte
-	path_size := cast(int)win32.GetModuleFileNameW(nil, transmute(win32.LPWSTR)&fullpath_buffer, len(fullpath_buffer))
-	if !(path_size != 0) {
-		fmt.eprintf("Error locating the oxse file path.\n")
-		os.exit(1)
-	}
+	fmt.printf("Found oxse root at %s\n", oxse_root())
 
-	oxse_fullpath, _ := win32.wstring_to_utf8(transmute(win32.wstring)&fullpath_buffer, path_size)
-	
-	oxse_exe := filepath.base(oxse_fullpath)
-	oxse_dir := filepath.dir(oxse_fullpath)
-
-	shell: Shell
-	shell.oxse_root = oxse_dir
 
 	args, args_error := app.parse_args(os.args[1:])
 	if args_error != nil {
@@ -48,11 +38,10 @@ main :: proc() {
 	}
 
 	if len(args) == 0 {
-		display_general_help(&shell)
+		print_general_help()
 		os.exit(0)
 	}
 
-	
 	command, command_is_string := args[0].(string)
 	if !command_is_string {
 		fmt.eprintf("First argument of oxse must be a command\n")
@@ -60,13 +49,22 @@ main :: proc() {
 	}
 	
 	found_command := false
+	if command == command_descriptions[.Init].name {
+		command_descriptions[.Init].procedure(nil, args[1:])
+		os.exit(0)
+	}
+	project, project_opened := open_project()
+	if !project_opened {
+		fmt.eprintf("Failed to open the oxse project. Make sure it's initialized via oxse init.\n")
+		os.exit(1)
+	}
 	for command_desc in command_descriptions do if command == command_desc.name {
-		command_desc.procedure(&shell, args)
+		command_desc.procedure(&project, args[1:])
 		found_command = true
 		break
-	} 
+	}
 	if !found_command {
-		fmt.eprintf("%s is not a recogneizd command\n", command)
+		fmt.eprintf("%s is not a recognized command\n", command)
 		os.exit(1)
 	}
 }

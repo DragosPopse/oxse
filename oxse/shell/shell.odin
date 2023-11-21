@@ -1,4 +1,5 @@
-package main
+//+private
+package oxse_shell
 
 import "core:fmt"
 import "core:strings"
@@ -9,17 +10,10 @@ import "core:c/libc"
 import "core:runtime"
 
 import "core:build"
-import oxse_build "build"
 
 import win32 "core:sys/windows"
-import "runtime/memo"
-import "runtime/app"
-
-Shell :: struct {
-	oxse_root: string,
-	project_root: string,
-	project: Project,
-}
+import "../runtime/memo"
+import "../runtime/app"
 
 Command_Kind :: enum {
 	Init,
@@ -29,7 +23,7 @@ Command_Kind :: enum {
 	Gen,
 }
 
-Command_Proc :: #type proc(shell: ^Shell, args: []app.Arg)
+Command_Proc :: #type proc(project: ^Project, args: []app.Arg)
 
 Command_Desc :: struct {
 	name: string,
@@ -93,7 +87,7 @@ command_descriptions := [Command_Kind]Command_Desc {
 	},
 }
 
-display_general_help :: proc(shell: ^Shell) {
+print_general_help :: proc() {
 	fmt.println("oxse is a tool for managing your oxse projects")
 	fmt.println("syntax: oxse [command] [args]")
 	fmt.println("available commands:")
@@ -104,48 +98,18 @@ display_general_help :: proc(shell: ^Shell) {
 	}
 }
 
-command_init :: proc(shell: ^Shell, args: []app.Arg) {
-	init_command := args[0]
-
-	init_dir := "."
-
+command_init :: proc(project: ^Project, args: []app.Arg) {
 	if project_initialized() {
 		fmt.eprintf("Already found an oxse project at this location\n")
 		os.exit(1)
 	}
 	
-	for arg in args[1:] do if dir, dir_is_string := arg.(string); dir_is_string {
-		build.make_directory(dir)
-		if !os.is_dir(dir) {
-			fmt.eprintf("Error making directory %s\n", dir)
-			os.exit(1)
-		}
-		init_dir = dir
-		break
-	}
-	is_empty := cast(bool)PathIsDirectoryEmptyW(win32.utf8_to_wstring(init_dir))
-	init_dir_abs, _ := filepath.abs(init_dir)
-	if !is_empty {
-		fmt.eprintf("oxse init expects an empty directory, got %v\n", init_dir_abs)
-		os.exit(1)
-	}
+	init_dir_abs, _ := filepath.abs(".")
 	
 	fmt.printf("Initializing an oxse project at %s\n", init_dir_abs)
 	os.set_current_directory(init_dir_abs)
 	
-	project_name: string
-	for arg in args do if flag, is_flag := arg.(app.Flag_Arg); is_flag {
-		switch flag.flag {
-		case "-name":
-			project_name = flag.key
-		}
-	}
-	if project_name == "" {
-		fmt.eprintf("init requires a project name. Please specify it with -name:\"projectname\"")
-		os.exit(1)
-	}
 	project: Project
-	project.name = project_name
 	if !save_project(project) {
 		fmt.eprintf("Failed to save the project.\n")
 		os.exit(1)
@@ -157,7 +121,7 @@ command_init :: proc(shell: ^Shell, args: []app.Arg) {
 	}
 }
 
-command_build :: proc(shell: ^Shell, args: []app.Arg) {
+command_build :: proc(project: ^Project, args: []app.Arg) {
 	odin_config: build.Odin_Config
 	odin_config.build_mode = .EXE
 	odin_config.out_dir = "."
@@ -166,7 +130,7 @@ command_build :: proc(shell: ^Shell, args: []app.Arg) {
 	odin_config.src_path = "build"
 	odin_config.opt = .Minimal
 	odin_config.collections = {
-		oxse_build.oxse_collection(),
+		oxse_collection(),
 	}
 	build_ok := build.odin(nil, .Build, odin_config, true)
 	if !build_ok {
@@ -175,16 +139,16 @@ command_build :: proc(shell: ^Shell, args: []app.Arg) {
 	}
 }
 
-command_config :: proc(shell: ^Shell, args: []app.Arg) {
+command_config :: proc(project: ^Project, args: []app.Arg) {
 	fmt.eprintf("Command config not implemented\n")
 	os.exit(1)
 }
 
-command_regen :: proc(shell: ^Shell, args: []app.Arg) {
+command_regen :: proc(project: ^Project, args: []app.Arg) {
 	for arg in args do if flag, is_flag := arg.(app.Flag_Arg); is_flag {
 		switch flag.flag {
 		case "-build":
-			build_system_string := generate_oxse_build_string(shell.project, args)
+			build_system_string := generate_oxse_build_string(project^, args)
 			build.make_directory("./build")
 			if !write_text_file("./build/build.odin", build_system_string) {
 				fmt.eprintf("Failed to generate build system")

@@ -1,4 +1,5 @@
-package main
+//+private
+package oxse_shell
 
 import "core:strings"
 import "core:fmt"
@@ -6,17 +7,27 @@ import "core:os"
 import "core:slice"
 import "core:build"
 
-import "runtime/app"
+import "../runtime/app"
 
 OXSE_BUILD_STRING := `
-package {0:s}_build
-
-import oxse_build "oxse:build"
+package oxse_project_build // Modify this name if you plan on including this build system into others
 
 import "core:build"
 import "core:fmt"
 import "core:strings"
 import "core:os"
+
+import "oxse:shell"
+
+// FILL THESE IN TO YOUR DESIRE. These are only needed if you plan on not modifying the generated build system too much
+
+PROJECT_NAME   :: "default_project"  // The name of the project
+SOURCE_PATH    :: "./src"            // The path of the odin source
+EXE_NAME       :: "hello"            // The produced executable name
+OUT_DIR        :: "./out"            // The output directory
+OUT_PER_TARGET :: true               // Generate a subfolder for each target
+
+//
 
 CURRENT_PLATFORM :: build.Platform{{ODIN_OS, ODIN_ARCH}}
 
@@ -62,7 +73,7 @@ run_target :: proc(target: ^build.Target, run_mode: build.Run_Mode, args: []buil
 	odin_build: build.Odin_Config
 	odin_build.platform = target.platform
 	odin_build.build_mode = .EXE
-	exe_name := "{1:s}"
+	exe_name := EXE_NAME
 	exe_extension: string
 	#partial switch target.platform.os {{
 	case .Windows:
@@ -70,12 +81,18 @@ run_target :: proc(target: ^build.Target, run_mode: build.Run_Mode, args: []buil
 	case: // Other platforms don't need extension right now.
 	}}
 	odin_build.out_file = fmt.tprintf("%%s%%s", exe_name, exe_extension)
-	odin_build.out_dir = build.trelpath(target, fmt.tprintf("out/%%s", target.name))
 
-	odin_build.src_path = build.trelpath(target, "{2:s}")
+	if OUT_PER_TARGET {{
+		odin_build.out_dir = build.trelpath(target, fmt.tprintf("./%%s/%%s", OUT_DIR, target.name))
+	}} else {{
+		odin_build.out_dir = build.trelpath(target, OUT_DIR)
+	}}
+	
+
+	odin_build.src_path = build.trelpath(target, SOURCE_PATH)
 
 	odin_build.collections = {{
-		oxse_build.oxse_collection(),
+		shell.oxse_collection(),
 		// Add more collections here
 	}}
 
@@ -119,7 +136,7 @@ run_target :: proc(target: ^build.Target, run_mode: build.Run_Mode, args: []buil
 
 @init
 _ :: proc() {{
-	project.name = "{0:s}"
+	project.name = PROJECT_NAME
 	build.add_target(&project, &target_debug, run_target)
 	build.add_target(&project, &target_release, run_target)
 	build.add_target(&project, &target_safe, run_target)
@@ -135,13 +152,11 @@ main :: proc() {{
 
 generate_oxse_build_string :: proc(project: Project, args: []app.Arg) -> string {
 	sb := strings.builder_make()
-	project_name := "testname"
-	project_source := "test"
-	project_exe_name := "testapp"
-	fmt.sbprintf(&sb, OXSE_BUILD_STRING, project_name, project_exe_name, project_source)
+	fmt.sbprintf(&sb, OXSE_BUILD_STRING)
 	return strings.to_string(sb)
 }
 
+// Note(Dragos): put this in the general shell api, rest should be private
 write_text_file :: proc(name: string, data: string) -> bool {
 	return os.write_entire_file(name, transmute([]u8)data)
 }

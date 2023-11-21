@@ -2,7 +2,7 @@ package oxse_app
 
 import win32 "core:sys/windows"
 import "core:fmt"
-import "core:runtime"
+import "../../runtime"
 import "core:time"
 import "core:dynlib"
 
@@ -124,7 +124,7 @@ _size :: proc "contextless" () -> xm.Vec2i {
 
 @(private="file")
 win32_window_proc :: proc "stdcall" (hwnd: win32.HWND, msg: win32.UINT, wparam: win32.WPARAM, lparam: win32.LPARAM) -> win32.LRESULT {
-	context = runtime.default_context() // Note(Dragos): This is not quite ok. 
+	context = runtime.default_context // Note(Dragos): This is not quite ok. 
 	switch msg {
 	case win32.WM_CREATE:
 
