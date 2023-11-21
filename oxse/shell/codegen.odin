@@ -150,6 +150,34 @@ main :: proc() {{
 }}
 `
 
+OXSE_DEFAULT_GITIGNORE_STRING :: `
+# The default gitignore uses the whitelist pattern. See https://gist.github.com/jamiebergen/91a49b3c3e648031619178050122d90f 
+# Ignore everything
+*
+# But descend into directories
+!*/
+
+# git essentials
+!.gitignore
+!.gitmodules
+!.gitattributes
+
+# github things
+!README.md
+!.github/**
+
+# Odin Packages
+!build/**
+!src/**
+
+# Other defaults
+!assets/**
+!lib/**
+
+# Oxse needs this, rest of .oxse is workspace specific
+!.oxse/project.json
+`
+
 generate_oxse_build_string :: proc(project: Project, args: []app.Arg) -> string {
 	sb := strings.builder_make()
 	fmt.sbprintf(&sb, OXSE_BUILD_STRING)
@@ -165,5 +193,9 @@ write_oxse_build :: proc(project: Project, args: []app.Arg) -> bool {
 	str := generate_oxse_build_string(project, args)
 	build.make_directory("./build")
 	return write_text_file("./build/build.odin", str)
+}
+
+write_gitignore :: proc() -> bool {
+	return write_text_file(".gitignore", OXSE_DEFAULT_GITIGNORE_STRING)
 }
 

@@ -1,0 +1,26 @@
+
+# The default gitignore uses the whitelist pattern. See https://gist.github.com/jamiebergen/91a49b3c3e648031619178050122d90f 
+# Ignore everything
+*
+# But descend into directories
+!*/
+
+# git essentials
+!.gitignore
+!.gitmodules
+!.gitattributes
+
+# github things
+!README.md
+!.github/**
+
+# Odin Packages
+!build/**
+!src/**
+
+# Other defaults
+!assets/**
+!lib/**
+
+# Oxse needs this, rest of .oxse is workspace specific
+!.oxse/project.json

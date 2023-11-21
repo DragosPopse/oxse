@@ -151,7 +151,11 @@ command_regen :: proc(project: ^Project, args: []app.Arg) {
 			build_system_string := generate_oxse_build_string(project^, args)
 			build.make_directory("./build")
 			if !write_text_file("./build/build.odin", build_system_string) {
-				fmt.eprintf("Failed to generate build system")
+				fmt.eprintf("Failed to generate build system\n")
+			}
+		case "-git-files":
+			if !write_gitignore() {
+				fmt.eprintf("Failed to generate .gitignore\n")
 			}
 		}
 	}
