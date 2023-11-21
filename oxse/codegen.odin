@@ -4,6 +4,7 @@ import "core:strings"
 import "core:fmt"
 import "core:os"
 import "core:slice"
+import "core:build"
 
 import "runtime/app"
 
@@ -132,7 +133,7 @@ main :: proc() {{
 }}
 `
 
-generate_oxse_build_string :: proc(shell: ^Shell, args: []app.Arg) -> string {
+generate_oxse_build_string :: proc(project: Project, args: []app.Arg) -> string {
 	sb := strings.builder_make()
 	project_name := "testname"
 	project_source := "test"
@@ -144,3 +145,10 @@ generate_oxse_build_string :: proc(shell: ^Shell, args: []app.Arg) -> string {
 write_text_file :: proc(name: string, data: string) -> bool {
 	return os.write_entire_file(name, transmute([]u8)data)
 }
+
+write_oxse_build :: proc(project: Project, args: []app.Arg) -> bool {
+	str := generate_oxse_build_string(project, args)
+	build.make_directory("./build")
+	return write_text_file("./build/build.odin", str)
+}
+

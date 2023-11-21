@@ -18,6 +18,7 @@ import "runtime/app"
 Shell :: struct {
 	oxse_root: string,
 	project_root: string,
+	project: Project,
 }
 
 Command_Kind :: enum {
@@ -25,6 +26,7 @@ Command_Kind :: enum {
 	Build,
 	Config,
 	Info,
+	Gen,
 }
 
 Command_Proc :: #type proc(shell: ^Shell, args: []app.Arg)
@@ -53,20 +55,42 @@ command_descriptions := [Command_Kind]Command_Desc {
 		procedure = command_build,
 		name = "build",
 		display = "build",
-		info = "Creates an executable of the build system. This ensures that the oxse collection is configured properly. ",
+		info = "Creates an executable of the build system. This ensures that the oxse collection is configured properly.",
 	},
 	.Config = Command_Desc {
 		procedure = command_config,
 		name = "config",
 		display = "config",
-		info = "Configures the current oxse project. Run the command with no args to show all the available config options",
+		info = "Configures the current oxse project.",
+		flags = {
+			Flag_Desc {
+				flag = app.Flag_Arg {
+					flag = "-user",
+				},
+				info = "Specify user configuration. These are typically ignored by the version control software.",
+			},
+		},
 	},
 	.Info = Command_Desc {
 		procedure = nil,
 		name = "info",
 		display = "info",
 		info = "Shows information about the current oxse project",
-	}
+	},
+	.Gen = Command_Desc {
+		procedure = command_regen,
+		name = "gen",
+		display = "gen",
+		info = "Generates or regenerates specified files or configurations. This can overwrite your work.",
+		flags = {
+			Flag_Desc {
+				flag = app.Flag_Arg {
+					flag = "-build",
+				},
+				info = "Generates the build system under ./build",
+			},
+		},
+	},
 }
 
 display_general_help :: proc(shell: ^Shell) {
@@ -82,8 +106,13 @@ display_general_help :: proc(shell: ^Shell) {
 
 command_init :: proc(shell: ^Shell, args: []app.Arg) {
 	init_command := args[0]
-	assert(init_command == "init")
+
 	init_dir := "."
+
+	if project_initialized() {
+		fmt.eprintf("Already found an oxse project at this location\n")
+		os.exit(1)
+	}
 	
 	for arg in args[1:] do if dir, dir_is_string := arg.(string); dir_is_string {
 		build.make_directory(dir)
@@ -104,11 +133,25 @@ command_init :: proc(shell: ^Shell, args: []app.Arg) {
 	fmt.printf("Initializing an oxse project at %s\n", init_dir_abs)
 	os.set_current_directory(init_dir_abs)
 	
-	build.make_directory("./build")
-	build.make_directory("./.oxse")
+	project_name: string
+	for arg in args do if flag, is_flag := arg.(app.Flag_Arg); is_flag {
+		switch flag.flag {
+		case "-name":
+			project_name = flag.key
+		}
+	}
+	if project_name == "" {
+		fmt.eprintf("init requires a project name. Please specify it with -name:\"projectname\"")
+		os.exit(1)
+	}
+	project: Project
+	project.name = project_name
+	if !save_project(project) {
+		fmt.eprintf("Failed to save the project.\n")
+		os.exit(1)
+	}
 
-	build_system_string := generate_oxse_build_string(shell, args)
-	if !write_text_file("./build/build.odin", build_system_string) {
+	if !write_oxse_build(project, args) {
 		fmt.eprintf("Failed to generate build system\n")
 		os.exit(1)
 	}
@@ -136,3 +179,17 @@ command_config :: proc(shell: ^Shell, args: []app.Arg) {
 	fmt.eprintf("Command config not implemented\n")
 	os.exit(1)
 }
+
+command_regen :: proc(shell: ^Shell, args: []app.Arg) {
+	for arg in args do if flag, is_flag := arg.(app.Flag_Arg); is_flag {
+		switch flag.flag {
+		case "-build":
+			build_system_string := generate_oxse_build_string(shell.project, args)
+			build.make_directory("./build")
+			if !write_text_file("./build/build.odin", build_system_string) {
+				fmt.eprintf("Failed to generate build system")
+			}
+		}
+	}
+}
+
