@@ -105,7 +105,8 @@ command_init :: proc(project: ^Project, args: []app.Arg) {
 	}
 	
 	init_dir_abs, _ := filepath.abs(".")
-	
+	is_empty := cast(bool)PathIsDirectoryEmptyW(win32.L("."))
+
 	fmt.printf("Initializing an oxse project at %s\n", init_dir_abs)
 	os.set_current_directory(init_dir_abs)
 	
@@ -114,10 +115,21 @@ command_init :: proc(project: ^Project, args: []app.Arg) {
 		fmt.eprintf("Failed to save the project.\n")
 		os.exit(1)
 	}
-
-	if !write_oxse_build(project, args) {
-		fmt.eprintf("Failed to generate build system\n")
-		os.exit(1)
+	
+	for arg in args do if flag, is_flag := arg.(app.Flag_Arg); is_flag {
+		switch flag.flag {
+		case "-quick":
+			if !is_empty {
+				fmt.eprintf("Cannot do a quick init on a non-empty directory.")
+			} else {
+				if !write_oxse_build() do fmt.eprintf("Failed to generate build system.\n")
+				if !write_gitignore() do fmt.eprintf("Failed to generate gitignore.\n")
+				if !write_default_main() do fmt.eprintf("Failed to generate ./src/main.\n")
+				if build.exec("oxse", {"build"}) != 0 do fmt.eprintf("Failed to run `oxse build`")
+				if build.exec("build", {"-ols", "-vscode"}) != 0 do fmt.eprintf("Failed to run `build -ols -vscode")
+				if build.exec("build", {}) != 0 do fmt.eprintf("Faield to run `build`")
+			}
+		}
 	}
 }
 
@@ -148,14 +160,18 @@ command_regen :: proc(project: ^Project, args: []app.Arg) {
 	for arg in args do if flag, is_flag := arg.(app.Flag_Arg); is_flag {
 		switch flag.flag {
 		case "-build":
-			build_system_string := generate_oxse_build_string(project^, args)
-			build.make_directory("./build")
-			if !write_text_file("./build/build.odin", build_system_string) {
+			if !write_oxse_build() {
 				fmt.eprintf("Failed to generate build system\n")
 			}
+
 		case "-git-files":
 			if !write_gitignore() {
 				fmt.eprintf("Failed to generate .gitignore\n")
+			}
+
+		case "-main":
+			if !write_default_main() {
+				fmt.eprintf("Failed to generate ./src/main.odin")
 			}
 		}
 	}

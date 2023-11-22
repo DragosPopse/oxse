@@ -178,7 +178,28 @@ OXSE_DEFAULT_GITIGNORE_STRING :: `
 !.oxse/project.json
 `
 
-generate_oxse_build_string :: proc(project: Project, args: []app.Arg) -> string {
+OXSE_DEFAULT_PROJECT_MAIN_STRING :: `
+package main
+
+import "core:fmt"
+import "oxse:runtime/app"
+
+main :: proc() {
+	app_info: app.Init
+	app_info.title = "Hello from OXSE!"
+	
+	app.init(app_info)
+	
+	for app.update() {
+		for event in app.poll_event() do #partial switch variant in event {
+		case app.Quit:
+			app.quit()
+		}
+	}
+}
+`
+
+generate_oxse_build_string :: proc() -> string {
 	sb := strings.builder_make()
 	fmt.sbprintf(&sb, OXSE_BUILD_STRING)
 	return strings.to_string(sb)
@@ -189,10 +210,15 @@ write_text_file :: proc(name: string, data: string) -> bool {
 	return os.write_entire_file(name, transmute([]u8)data)
 }
 
-write_oxse_build :: proc(project: Project, args: []app.Arg) -> bool {
-	str := generate_oxse_build_string(project, args)
+write_oxse_build :: proc() -> bool {
+	str := generate_oxse_build_string()
 	build.make_directory("./build")
 	return write_text_file("./build/build.odin", str)
+}
+
+write_default_main :: proc() -> bool {
+	build.make_directory("./src")
+	return write_text_file("./src/main.odin", OXSE_DEFAULT_PROJECT_MAIN_STRING)
 }
 
 write_gitignore :: proc() -> bool {
